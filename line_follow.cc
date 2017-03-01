@@ -13,7 +13,8 @@ node map[8] = {
 	{7, {1.0, 1.0}, {6,-1,-1}, false}
 };
 
-point current_position = map[0].position;
+point current_position_estimate = map[0].position;
+float current_direction_estimate = 90.0;
 int current_node = 0;
 facing current_direction = EAST;
 
@@ -56,11 +57,41 @@ bool node_to_neighbour(int start, int finish){
 }
 
 bool drive_to_line(){
+	int state;
+	int start_time = global_time.read();
+	int time = start_time;
+	while(true){
+		state = get_line_follower_state();
+		
+		if((state & FRONT_LINE_BITS) == 0b111){
+			break;
+		}
+		
+		follow_line(state, true);
+		//increment position
+		break;
+	}
 	return true;
 }
 
 bool rotate(facing end){
-	return true;
+	int state;
+	int start_time = global_time.read();
+	int time = start_time;
+	while(true){
+		state = get_line_follower_state();
+		
+		if(state & BACK_LINE_BITS){
+			break;
+		} 
+		
+		follow_line(state, false);
+		//increment position
+	}
+	
+	int direction = (end - current_direction);	
+	
+	return false;
 }
 
 facing facing_from_node_to_node(int start, int finish){
@@ -121,43 +152,24 @@ int follow_line(int state, bool speed){
 }
 
 float error(int state){
-	switch(state & 0b00001111){
+	switch(state & FRONT_LINE_BITS){
 		
-		case 0b0001:
+		case 0b001:
 			return  LARGE_ERROR; 
-		case 0b0010:
+		case 0b010:
 			return 0.0;
-		case 0b0011:
+		case 0b011:
 			return  SMALL_ERROR;
-		case 0b0100:
+		case 0b100:
 			return -LARGE_ERROR;		
-		case 0b0110:
+		case 0b110:
 			return -SMALL_ERROR;		
-		case 0b1001:
-			return  LARGE_ERROR;
-		case 0b1010:
-			return 0.0;
-		case 0b1011:
-			return  SMALL_ERROR;
-		case 0b1100:
-			return -LARGE_ERROR;
-		case 0b1110:
-			return -SMALL_ERROR;
-		case 0b0000:
-		case 0b0101:
-		case 0b0111:
-		case 0b1000:
-		case 0b1101:
-		case 0b1111:
+		case 0b000:
+		case 0b101:
+		case 0b111:
 		default:
 			return 0.0;
-	}
-	
-	//float error = 0.0;
-	//if(state & 0b00000001{
-		
-	//}
-	
+	}	
 	return 0.0;
 }
 
@@ -167,10 +179,14 @@ float last_error = 0.0;
 float PID(int state){
 	float err = error(state);
 	integral += err;
-	if((state & 0b00001111) == 0b00001010)
-		integral = 0.0;
 	float derivative = last_error - err;
 	last_error = err;
 	float val = Kp * err + Ki * integral + Kd * derivative;
 	return val; //(val < -1.0 ? -1.0 : val) > 1.0 ? 1.0 : val;
+}
+
+void set_motors(int left, int right){
+	if(left == right){
+		rlink.command(BOTH_MOTORS_GO_SAME, left);
+	}
 }

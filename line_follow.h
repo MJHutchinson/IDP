@@ -17,17 +17,20 @@
 #define Kd 0.0
 #define SMALL_ERROR 0.5
 #define LARGE_ERROR 1.0
+#define LINE_BITS 0b00001111
+#define FRONT_LINE_BITS 0b00000111
+#define BACK_LINE_BITS 0b00001000
 
 using namespace std;
 
 extern robot_link rlink;
 
 enum facing{
-	NORTH,
-	EAST,
-	SOUTH,
-	WEST,
-	ERROR
+	NORTH = 0,
+	EAST = 90,
+	SOUTH = 180,
+	WEST = 270,
+	ERROR = -1
 };
 
 struct point{
@@ -42,6 +45,7 @@ struct node{
 	bool has_markers;
 };
 
+void set_motors(int left, int right);
 bool node_to_node(int start, int finish);
 bool node_to_neighbour(int start, int finish);
 bool drive_to_line();

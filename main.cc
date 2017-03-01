@@ -37,9 +37,7 @@ int main(){
 	//rlink.command(MOTOR_2_GO, 200);
 	//rlink.command(MOTOR_3_GO, 200);
 	//rlink.command(MOTOR_4_GO, 200);
-	
-	cout << facing_from_node_to_node(4,3) <<endl;
-	
+		
 
 	while(true){
 		//int state = get_line_follower_state();
