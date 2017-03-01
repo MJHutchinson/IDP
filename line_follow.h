@@ -1,5 +1,9 @@
 #include <robot_instr.h>
 #include <robot_link.h>
+#include <stopwatch.h>
+#include <cmath>
+#include <iostream>
+#include "sensor_interface.h"
 
 ///Motor speeds to use
 #define SLOW_SPEED 100
@@ -18,6 +22,31 @@ using namespace std;
 
 extern robot_link rlink;
 
+enum facing{
+	NORTH,
+	EAST,
+	SOUTH,
+	WEST,
+	ERROR
+};
+
+struct point{
+	double x;
+	double y;
+};
+
+struct node{
+	int node;
+	point position;
+	int connections[3];	
+	bool has_markers;
+};
+
+bool node_to_node(int start, int finish);
+bool node_to_neighbour(int start, int finish);
+bool drive_to_line();
+bool rotate(facing end);
+facing facing_from_node_to_node(int start, int finish);
 float error(int state);
 float PID(int state);
 int follow_line(int state, bool speed);
