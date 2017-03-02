@@ -8,6 +8,7 @@
 #include "sensor_interface.h"
 #include "line_follow.h"
 #include "arm_control.h"
+#include "facing.h"
 
 #define DEBUG 1
 #define ROBOT_NUM  8

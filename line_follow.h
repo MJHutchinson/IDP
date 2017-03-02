@@ -5,22 +5,24 @@
 #include <iostream>
 #include <robot_delay.h>
 #include "sensor_interface.h"
+#include "facing.h"
 
 ///Motor speeds to use
-#define SLOW_SPEED 30
+#define SLOW_SPEED 45
 #define FAST_SPEED 75
 ///Differential speeds for the motors when turning in line follow
-#define SLOW_DIFF 20
+#define SLOW_DIFF 25
 #define FAST_DIFF 50
 ///On spot turn speeds
-#define SPOT_TURN_SPEED 30
+#define SPOT_TURN_SPEED 50
 ///Timing delays for getting off marks on driving and turning
 #define DELAY 100
+#define TURN_DELAY 500
 ///PID control values
 #define Kp 1.0
 #define Ki 0.0
 #define Kd 0.0
-#define SMALL_ERROR 0.5
+#define SMALL_ERROR 0.2
 #define LARGE_ERROR 1.0
 #define LINE_BITS 0b00001111
 #define FRONT_LINE_BITS 0b00000111
@@ -29,14 +31,6 @@
 using namespace std;
 
 extern robot_link rlink;
-
-enum facing{
-	NORTH = 0,
-	EAST = 90,
-	SOUTH = 180,
-	WEST = 270,
-	ERROR = -1
-};
 
 struct point{
 	double x;
@@ -53,7 +47,7 @@ struct node{
 void set_motors(int left, int right);
 bool node_to_node(int start, int finish);
 bool node_to_neighbour(int start, int finish);
-bool drive_to_line();
+bool drive_to_line(bool speed);
 bool rotate(facing end);
 facing facing_from_node_to_node(int start, int finish);
 float error(int state);

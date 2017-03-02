@@ -1,13 +1,15 @@
+# Automatically generated Makefile for arm
 LIBPATH = lib
+LIBARMPATH = lib-arm
 
-a.out :  sensor_interface.o main.o line_follow.o arm_control.o
-	 g++ -Llib -o a.out  sensor_interface.o  main.o  line_follow.o  arm_control.o  -lrobot
+main.arm :  sensor_interface.arm.o main.arm.o line_follow.arm.o arm_control.arm.o
+	 arm-linux-gnueabi-g++ -L${LIBARMPATH} -o main.arm  sensor_interface.arm.o  main.arm.o  line_follow.arm.o  arm_control.arm.o  -lrobot
 
-sensor_interface.o: sensor_interface.cc
-	 g++ -ansi -Wall -g -Ilib -c sensor_interface.cc
-main.o: main.cc main.h
-	 g++ -ansi -Wall -g -Ilib -c main.cc
-line_follow.o: line_follow.cc
-	 g++ -ansi -Wall -g -Ilib -c line_follow.cc
-arm_control.o: arm_control.cc
-	 g++ -ansi -Wall -g -Ilib -c arm_control.cc
+sensor_interface.arm.o: sensor_interface.cc sensor_interface.h
+	 arm-linux-gnueabi-g++ -ansi -Wall -g -I${LIBARMPATH} -I${LIBPATH} -c sensor_interface.cc -o sensor_interface.arm.o
+main.arm.o: main.cc main.h
+	 arm-linux-gnueabi-g++ -ansi -Wall -g -I${LIBARMPATH} -I${LIBPATH} -c main.cc -o main.arm.o
+line_follow.arm.o: line_follow.cc line_follow.h
+	 arm-linux-gnueabi-g++ -ansi -Wall -g -I${LIBARMPATH} -I${LIBPATH} -c line_follow.cc -o line_follow.arm.o
+arm_control.arm.o: arm_control.cc
+	 arm-linux-gnueabi-g++ -ansi -Wall -g -I${LIBARMPATH} -I${LIBPATH} -c arm_control.cc -o arm_control.arm.o

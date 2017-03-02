@@ -40,26 +40,26 @@ bool node_to_neighbour(int start, int finish){
 	}
 	
 	if(map[start].has_markers){
-		if(!drive_to_line())
+		if(!drive_to_line(true))
 			return false;
 	}
 	
 	if(map[finish].has_markers){
-		if(!drive_to_line())
+		if(!drive_to_line(true))
 			return false;
 	}
 	
-	if(drive_to_line()){
+	if(drive_to_line(true)){
 		set_motors(0,0);
 		return true;
 	}
 	
-	current_node = end;
+	current_node = finish;
 	
 	return false;	
 }
 
-bool drive_to_line(){
+bool drive_to_line(bool speed){
 	int state;
 	int start_time = global_time.read();
 	int time = start_time;
@@ -74,51 +74,66 @@ bool drive_to_line(){
 			break;
 		}
 		
-		follow_line(state, true);
+		follow_line(state, speed);
 		//increment position
 		
 		if(global_time.read() - time > 15000){
-			set_motors(0,0);
-			return false;
+			//set_motors(0,0);
+			//return false;
 		}
 	}
 	return true;
 }
 
 bool rotate(facing end){
-	if(end == current_direction)
+	if(end == current_direction){
+		cout << "Alreday facing that way";
 		return true;	
+	}
+
 
 	int state;
 	int start_time = global_time.read();
 	int time = start_time;
 	int rotation_to_do = end - current_direction;
 	//some error check needed to not crash on trucks
-	int rotation_direction = (rotation_to_do > 0) ? 1 : 0;
-
-	set_motors(SPOT_TURN_SPEED + (rotation_direction) * 128, SPOT_TURN_SPEED + (1 - rotation_direction) * 128);
-	delay(DELAY);	
+	int rotation_direction = (rotation_to_do > 0) ? 1 : -1;
+	cout << "Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
 
 	while(true){
 		state = get_line_follower_state();
 		
-		if(state & 0b0101){
-			set_motors(SPOT_TURN_SPEED/2 + (rotation_direction) * 128, SPOT_TURN_SPEED/2 + (1 - rotation_direction) * 128);
-		}
-		
-		if(state & 0b0010){
+		if((state & BACK_LINE_BITS)){
 			set_motors(0,0);
 			break;
-		} 
+		}
+		
+		follow_line(state, false);
+		//increment position
 		
 		if(global_time.read() - time > 15000){
-			set_motors(0,0);
-			return false;
+			//set_motors(0,0);
+			//return false;
 		}
-		//follow_line(state, false);
-		//increment position
 	}
 	
+	set_motors( rotation_direction * SPOT_TURN_SPEED , rotation_direction * -SPOT_TURN_SPEED);
+
+	delay(TURN_DELAY);	
+	
+	while(true){
+		state = get_line_follower_state();
+		
+		if(state & 0b1010){
+			break;
+		}
+		
+		if(global_time.read() - time > 15000){
+			//set_motors(0,0);
+			//return false;
+		}
+	}
+
 	current_direction = end;	
 	
 	return true;
@@ -148,34 +163,28 @@ int follow_line(int state, bool speed){
 	
 	float t = PID(state);
 	
-	switch(state & 0b00001111){
-		case 0b0001:
-		case 0b0010:
-		case 0b0011:
-		case 0b0100:
-		case 0b0110:
-		case 0b1001:
-		case 0b1010:
-		case 0b1011:
-		case 0b1100:
-		case 0b1110:
+	switch(state & 0b00000111){
+		case 0b001:
+		case 0b010:
+		case 0b011:
+		case 0b100:
+		case 0b110:
+/////////////////////////////////
+//temp for test- need to figure//
+		case 0b111:
 			if(speed){
-				rlink.command(MOTOR_1_GO, FAST_SPEED + (int)(FAST_DIFF * t));
-				rlink.command(MOTOR_2_GO, FAST_SPEED - (int)(FAST_DIFF * t));
+					set_motors(FAST_SPEED - t * FAST_DIFF, FAST_SPEED + t * FAST_DIFF);
+					//cout << "M1E: " << 128 + FAST_SPEED - t * FAST_DIFF << " M1A: " << rlink.request(MOTOR_1) << " M3E: " << FAST_SPEED + t * FAST_DIFF << " M3A: " << rlink.request(MOTOR_3) << " E: " << t << " " << endl;
 				return 2;
 			}else{
-				rlink.command(MOTOR_1_GO, SLOW_SPEED + (int)(SLOW_DIFF * t));
-				rlink.command(MOTOR_2_GO, SLOW_SPEED - (int)(SLOW_DIFF * t));
+					set_motors(SLOW_SPEED - t * SLOW_DIFF, SLOW_SPEED + t * SLOW_DIFF);
 				return 1;
 			}
-		case 0b0000:
-		case 0b0101:
-		case 0b0111:
-		case 0b1000:
-		case 0b1101:
-		case 0b1111:
+		case 0b000:
+		case 0b101:
+
 		default:
-			rlink.command(BOTH_MOTORS_GO_SAME, 0);
+			set_motors(0,0);
 			return -1;
 	}
 	return 0.0;
@@ -215,11 +224,48 @@ float PID(int state){
 	return val; //(val < -1.0 ? -1.0 : val) > 1.0 ? 1.0 : val;
 }
 
+// assumes between -127 and +127
 void set_motors(int left, int right){
+	if((left > 0) & (left < 127)){
+		rlink.command(MOTOR_1_GO, 128 + left);
+	}else if((left < 0) & (left > -127)){
+		rlink.command(MOTOR_1_GO, - left);
+	}else{
+		rlink.command(MOTOR_1_GO, 0);	
+	}
+
+	if((right > 0) & (right < 127)){
+		rlink.command(MOTOR_3_GO, right);
+	}else if((left < 0) & (right > -127)){
+		rlink.command(MOTOR_3_GO, 128 - right);
+	}else{
+		rlink.command(MOTOR_3_GO, 0);	
+	}
+
+	return;
+
+//////////////////////////////////////
+///MOTOR_2 Bust on our box////////////
+//////////////////////////////////////
 	if(left == right){
-		rlink.command(BOTH_MOTORS_GO_SAME, left);
+		if((left > 0) & (left < 127)){
+			rlink.command(BOTH_MOTORS_GO_OPPOSITE, left);
+		}else if((left < 0) & (left > - 127)){
+			rlink.command(BOTH_MOTORS_GO_OPPOSITE, 128 - left);
+		}else{
+			rlink.command(BOTH_MOTORS_GO_OPPOSITE, 0);	
+		}
+	}else if(left == -right){
+		if((left > 0) & (left < 127)){
+			rlink.command(BOTH_MOTORS_GO_SAME, left);
+		}else if((left < 0) & (left > -127)){
+			rlink.command(BOTH_MOTORS_GO_SAME, 128 - left);
+		}else{
+			rlink.command(BOTH_MOTORS_GO_SAME, 0);	
+		}
 	}else{
 		rlink.command(MOTOR_1_GO, left);
 		rlink.command(MOTOR_2_GO, right);
 	}
+///////////////////////////////////////
 }
