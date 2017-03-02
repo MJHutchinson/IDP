@@ -3,14 +3,19 @@
 #include <stopwatch.h>
 #include <cmath>
 #include <iostream>
+#include <robot_delay.h>
 #include "sensor_interface.h"
 
 ///Motor speeds to use
-#define SLOW_SPEED 100
-#define FAST_SPEED 200
-///Differential speeds for the motors when turning
-#define SLOW_DIFF 25
+#define SLOW_SPEED 30
+#define FAST_SPEED 75
+///Differential speeds for the motors when turning in line follow
+#define SLOW_DIFF 20
 #define FAST_DIFF 50
+///On spot turn speeds
+#define SPOT_TURN_SPEED 30
+///Timing delays for getting off marks on driving and turning
+#define DELAY 100
 ///PID control values
 #define Kp 1.0
 #define Ki 0.0

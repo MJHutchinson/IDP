@@ -50,8 +50,11 @@ bool node_to_neighbour(int start, int finish){
 	}
 	
 	if(drive_to_line()){
+		set_motors(0,0);
 		return true;
 	}
+	
+	current_node = end;
 	
 	return false;	
 }
@@ -60,6 +63,10 @@ bool drive_to_line(){
 	int state;
 	int start_time = global_time.read();
 	int time = start_time;
+
+	set_motors(SLOW_SPEED, SLOW_SPEED);
+	delay(DELAY);
+
 	while(true){
 		state = get_line_follower_state();
 		
@@ -69,29 +76,52 @@ bool drive_to_line(){
 		
 		follow_line(state, true);
 		//increment position
-		break;
+		
+		if(global_time.read() - time > 15000){
+			set_motors(0,0);
+			return false;
+		}
 	}
 	return true;
 }
 
 bool rotate(facing end){
+	if(end == current_direction)
+		return true;	
+
 	int state;
 	int start_time = global_time.read();
 	int time = start_time;
+	int rotation_to_do = end - current_direction;
+	//some error check needed to not crash on trucks
+	int rotation_direction = (rotation_to_do > 0) ? 1 : 0;
+
+	set_motors(SPOT_TURN_SPEED + (rotation_direction) * 128, SPOT_TURN_SPEED + (1 - rotation_direction) * 128);
+	delay(DELAY);	
+
 	while(true){
 		state = get_line_follower_state();
 		
-		if(state & BACK_LINE_BITS){
+		if(state & 0b0101){
+			set_motors(SPOT_TURN_SPEED/2 + (rotation_direction) * 128, SPOT_TURN_SPEED/2 + (1 - rotation_direction) * 128);
+		}
+		
+		if(state & 0b0010){
+			set_motors(0,0);
 			break;
 		} 
 		
-		follow_line(state, false);
+		if(global_time.read() - time > 15000){
+			set_motors(0,0);
+			return false;
+		}
+		//follow_line(state, false);
 		//increment position
 	}
 	
-	int direction = (end - current_direction);	
+	current_direction = end;	
 	
-	return false;
+	return true;
 }
 
 facing facing_from_node_to_node(int start, int finish){
@@ -188,5 +218,8 @@ float PID(int state){
 void set_motors(int left, int right){
 	if(left == right){
 		rlink.command(BOTH_MOTORS_GO_SAME, left);
+	}else{
+		rlink.command(MOTOR_1_GO, left);
+		rlink.command(MOTOR_2_GO, right);
 	}
 }
