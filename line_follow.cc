@@ -2,7 +2,7 @@
 
 extern stopwatch global_time;
 
-node map[8] = {
+node map[NODES] = {
 	{0, {0.0, 0.0}, {1, 5,-1}, true	},
 	{1, {0.5, 0.0}, {0, 3, 2}, false},
 	{2, {1.0, 0.0}, {1,-1,-1}, false},
@@ -20,8 +20,50 @@ facing current_direction = EAST;
 
 bool node_to_node(int start, int finish){
 	//Dijkstra's Algorithm Implimentaion
+	//copy of map - can be edited
+	node Q[NODES];
+
+	float dist[NODES];
+	float prev[NODES];
+	bool done[NODES];
+
+	for(int i = 0; i < NODES; i++){
+		dist[i] = 9999.8;
+		prev[i] = -1;
+		done[i] = false;
+		Q[i] = map[i];
+	}
+
+	dist[start] = 0;
+
+	while(true){
+		int closest = -1;
+		float distance = 9999.9;
+		for(int n = 0; n < NODES; n++){
+			if((done[n]) & (dist[n] < distance)){
+				closest = n;
+			}
+		}
+		
+		if(closest == -1){
+			return false;
+		}
+
+		for(int j = 0; j < 3; j++){
+			if(Q[closest].connections[j] != -1){
+				int connection = Q[closest].connections[j];
+				float new_dist = dist[closest] + sqrt(pow(Q[closest].position.x - Q[connection].position.x, 2) + pow(Q[closest].position.y - Q[connection].position.y, 2));
+				if(new_dist < dist[Q[closest].connections[j]]){
+					dist[connection] = new_dist;
+					prev[connection] = closest;
+				}
+			}
+		}
+
+	}
 	return true;
 }
+
 bool node_to_neighbour(int start, int finish){
 	
 	if(start != current_node){
@@ -33,11 +75,11 @@ bool node_to_neighbour(int start, int finish){
 		rotate(direction_to_neighbour);
 	}
 	
-	rlink.command(BOTH_MOTORS_GO_SAME, SLOW_SPEED);
-	int time = global_time.read();
-	while((global_time.read() - time) < 20){
-		follow_line(get_line_follower_state(), false);
-	}
+	//rlink.command(BOTH_MOTORS_GO_SAME, SLOW_SPEED);
+	//int time = global_time.read();
+	//while((global_time.read() - time) < 20){
+	//	follow_line(get_line_follower_state(), false, false);
+	//}
 	
 	if(map[start].has_markers){
 		if(!drive_to_line(true))
@@ -74,15 +116,43 @@ bool drive_to_line(bool speed){
 			break;
 		}
 		
-		follow_line(state, speed);
+		follow_line(state, speed, false);
 		//increment position
 		
-		if(global_time.read() - time > 15000){
-			//set_motors(0,0);
-			//return false;
+		if(global_time.read() - time > TIMEOUT){
+			set_motors(0,0);
+			return false;
 		}
 	}
 	return true;
+}
+
+bool reverse_to_line(bool speed){
+	int state;
+	int start_time = global_time.read();
+	int time = start_time;
+
+	set_motors(-SLOW_SPEED, -SLOW_SPEED);
+	delay(DELAY);
+
+	set_motors(-FAST_SPEED, -FAST_SPEED);
+
+	while(true){
+		state = get_line_follower_state();
+		
+		if((state & BACK_LINE_BITS)){
+			set_motors(-SLOW_SPEED, -SLOW_SPEED);
+		}
+		
+		follow_line(state, speed, true);
+		//increment position
+		
+		if(global_time.read() - time > TIMEOUT){
+			set_motors(0,0);
+			return false;
+		}
+	}
+	return true;	
 }
 
 bool rotate(facing end){
@@ -108,12 +178,12 @@ bool rotate(facing end){
 			break;
 		}
 		
-		follow_line(state, false);
+		//follow_line(state, false, false);
 		//increment position
 		
-		if(global_time.read() - time > 15000){
-			//set_motors(0,0);
-			//return false;
+		if(global_time.read() - time > TIMEOUT){
+			set_motors(0,0);
+			return false;
 		}
 	}
 	
@@ -128,7 +198,7 @@ bool rotate(facing end){
 			break;
 		}
 		
-		if(global_time.read() - time > 15000){
+		if(global_time.read() - time > TIMEOUT){
 			//set_motors(0,0);
 			//return false;
 		}
@@ -159,9 +229,10 @@ facing facing_from_node_to_node(int start, int finish){
 	return ERROR;
 }
 
-int follow_line(int state, bool speed){
+int follow_line(int state, bool speed, bool reverse){
 	
 	float t = PID(state);
+	float direction = reverse ? -1.0 : 1.0;
 	
 	switch(state & 0b00000111){
 		case 0b001:
@@ -173,11 +244,11 @@ int follow_line(int state, bool speed){
 //temp for test- need to figure//
 		case 0b111:
 			if(speed){
-					set_motors(FAST_SPEED - t * FAST_DIFF, FAST_SPEED + t * FAST_DIFF);
+					set_motors((FAST_SPEED - t * FAST_DIFF) * ( direction ), (FAST_SPEED + t * FAST_DIFF) * ( direction ));
 					//cout << "M1E: " << 128 + FAST_SPEED - t * FAST_DIFF << " M1A: " << rlink.request(MOTOR_1) << " M3E: " << FAST_SPEED + t * FAST_DIFF << " M3A: " << rlink.request(MOTOR_3) << " E: " << t << " " << endl;
 				return 2;
 			}else{
-					set_motors(SLOW_SPEED - t * SLOW_DIFF, SLOW_SPEED + t * SLOW_DIFF);
+					set_motors((SLOW_SPEED - t * SLOW_DIFF) * ( direction ), (SLOW_SPEED + t * SLOW_DIFF) * ( direction ));
 				return 1;
 			}
 		case 0b000:
@@ -187,7 +258,7 @@ int follow_line(int state, bool speed){
 			set_motors(0,0);
 			return -1;
 	}
-	return 0.0;
+	return 0;
 }
 
 float error(int state){
