@@ -18,9 +18,9 @@
 ///On spot turn speeds
 #define SPOT_TURN_SPEED 50
 ///Timing delays for getting off marks on driving and turning
-#define DELAY 100
+#define DELAY 300
 #define TURN_DELAY 500
-#define TIMEOUT 1
+#define TIMEOUT 15000
 ///PID control values
 #define Kp 1.0
 #define Ki 0.0

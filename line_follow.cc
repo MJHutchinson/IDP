@@ -24,8 +24,15 @@ bool node_to_node(int start, int finish){
 	
 	vector<int> path = get_path(start, finish);
 
+	int current  = path.back();
+	path.pop_back();
+	int next = path.back();
+	path.pop_back();
+
 	while(!path.empty()){
-		cout << path.back() << endl;
+		node_to_neighbour(current, next);
+		current = next;
+		next = path.back();
 		path.pop_back();
 	}
 	
@@ -115,9 +122,11 @@ bool node_to_neighbour(int start, int finish){
 	if(start != current_node){
 		cout << "You ain't at node " << start << " you at " << current_node << " DUH" << endl;
 	}
+	cout << "Going from node " << start << " to node " << finish << endl;
 	facing direction_to_neighbour = facing_from_node_to_node(start, finish);
 	
 	if(direction_to_neighbour != current_direction){
+		cout << "rotating to face direction" << endl;
 		rotate(direction_to_neighbour);
 	}
 	
@@ -128,16 +137,19 @@ bool node_to_neighbour(int start, int finish){
 	//}
 	
 	if(map[start].has_markers){
+		cout << "driving to start node markers" << endl;
 		if(!drive_to_line(true))
 			return false;
 	}
 	
 	if(map[finish].has_markers){
+		cout << "driving to end node markers" << endl;
 		if(!drive_to_line(true))
 			return false;
 	}
 	
 	if(drive_to_line(true)){
+		cout << "driving to end node" << endl;
 		set_motors(0,0);
 		return true;
 	}
@@ -152,7 +164,7 @@ bool drive_to_line(bool speed){
 	int start_time = global_time.read();
 	int time = start_time;
 
-	set_motors(SLOW_SPEED, SLOW_SPEED);
+	set_motors(speed ? FAST_SPEED : SLOW_SPEED, speed ? FAST_SPEED : SLOW_SPEED);
 	delay(DELAY);
 
 	while(true){
@@ -240,7 +252,7 @@ bool rotate(facing end){
 	while(true){
 		state = get_line_follower_state();
 		
-		if(state & 0b1010){
+		if((state & 0b010)){
 			break;
 		}
 		
@@ -278,7 +290,7 @@ facing facing_from_node_to_node(int start, int finish){
 int follow_line(int state, bool speed, bool reverse){
 	
 	float t = PID(state);
-	float direction = reverse ? -1.0 : 1.0;
+	int direction = reverse ? -1 : 1;
 	
 	switch(state & 0b00000111){
 		case 0b001:
@@ -290,8 +302,9 @@ int follow_line(int state, bool speed, bool reverse){
 //temp for test- need to figure//
 		case 0b111:
 			if(speed){
+					//cout << " Speed: fast ";
 					set_motors((FAST_SPEED - t * FAST_DIFF) * ( direction ), (FAST_SPEED + t * FAST_DIFF) * ( direction ));
-					//cout << "M1E: " << 128 + FAST_SPEED - t * FAST_DIFF << " M1A: " << rlink.request(MOTOR_1) << " M3E: " << FAST_SPEED + t * FAST_DIFF << " M3A: " << rlink.request(MOTOR_3) << " E: " << t << " " << endl;
+					//cout << "M1E: " << FAST_SPEED - t * FAST_DIFF << " M1A: " << (rlink.request(MOTOR_1) - 128) << " M3E: " << FAST_SPEED + t * FAST_DIFF << " M3A: " << rlink.request(MOTOR_3) << " E: " << t << " " << endl;
 				return 2;
 			}else{
 					set_motors((SLOW_SPEED - t * SLOW_DIFF) * ( direction ), (SLOW_SPEED + t * SLOW_DIFF) * ( direction ));
@@ -304,6 +317,7 @@ int follow_line(int state, bool speed, bool reverse){
 			set_motors(0,0);
 			return -1;
 	}
+
 	return 0;
 }
 
