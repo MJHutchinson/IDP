@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iostream>
 #include <robot_delay.h>
+#include <vector>
 #include "sensor_interface.h"
 #include "facing.h"
 
@@ -59,3 +60,4 @@ float error(int state);
 float PID(int state);
 int follow_line(int state, bool speed, bool reverse);
 int find_smallest(int vals[]);
+vector<int> get_path(int start, int finish);

@@ -21,47 +21,93 @@ facing current_direction = EAST;
 bool node_to_node(int start, int finish){
 	//Dijkstra's Algorithm Implimentaion
 	//copy of map - can be edited
+	
+	vector<int> path = get_path(start, finish);
+
+	while(!path.empty()){
+		cout << path.back() << endl;
+		path.pop_back();
+	}
+	
+	return true;
+}
+
+vector<int> get_path(int start, int finish){
 	node Q[NODES];
 
 	float dist[NODES];
 	float prev[NODES];
 	bool done[NODES];
-
+		
+	cout << "initialsie arrays" << endl;
 	for(int i = 0; i < NODES; i++){
 		dist[i] = 9999.8;
 		prev[i] = -1;
 		done[i] = false;
 		Q[i] = map[i];
 	}
+	cout << "arrays initialised" << endl;
 
 	dist[start] = 0;
 
-	while(true){
+	for(int k = 0; k < 8; k++){
+		cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
+	}
+
+	while(!(done[0] & done[1] & done[2] & done[3] & done[4] & done[5] & done[6] & done[7])){
+		cout << "loop start" << endl;
 		int closest = -1;
 		float distance = 9999.9;
 		for(int n = 0; n < NODES; n++){
-			if((done[n]) & (dist[n] < distance)){
+			if(!(done[n]) & (dist[n] < distance)){
 				closest = n;
+				distance = dist[n];
 			}
 		}
+		cout << "	selected node " << closest << endl;
 		
 		if(closest == -1){
-			return false;
+			return vector<int>();
+		}else if(closest == finish){
+			break;		
+		}else{
+			done[closest] = true;
 		}
 
 		for(int j = 0; j < 3; j++){
 			if(Q[closest].connections[j] != -1){
 				int connection = Q[closest].connections[j];
-				float new_dist = dist[closest] + sqrt(pow(Q[closest].position.x - Q[connection].position.x, 2) + pow(Q[closest].position.y - Q[connection].position.y, 2));
-				if(new_dist < dist[Q[closest].connections[j]]){
-					dist[connection] = new_dist;
-					prev[connection] = closest;
+				if(!done[connection]){
+					cout << "		looking at node " << closest << " to " << connection << endl;
+					float new_dist = dist[closest] + sqrt(pow(Q[closest].position.x - Q[connection].position.x, 2) + pow(Q[closest].position.y - Q[connection].position.y, 2));
+					cout << "		current dist: " << dist[connection] << " new dist: " << new_dist << endl;
+					if(new_dist < dist[Q[closest].connections[j]]){
+						cout << "		better path found" << endl;
+						dist[connection] = new_dist;
+						prev[connection] = closest;
+					}
 				}
 			}
 		}
+		for(int k = 0; k < 8; k++){
+			cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
+		}
 
 	}
-	return true;
+
+	vector<int> path;
+	int current  = finish;
+	while(current != -1){
+		cout << current << endl;
+		path.push_back(current);
+		current = prev[current];
+	}
+
+	//for(int k = 0; k < 8; k++){
+	//	cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
+	//}
+
+	return path;
 }
 
 bool node_to_neighbour(int start, int finish){
