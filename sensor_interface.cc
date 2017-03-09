@@ -28,10 +28,12 @@ int get_strain_state(){
 //}
 
 void set_pneumatic_0(bool state){
-	
+	pneumatic_state = (-state ^ pneumatic_state) & (1 << 0);
+	set_outputs();
 }
 void set_pneumatic_1(bool state){
-
+	pneumatic_state = (-state ^ pneumatic_state) & (1 << 1);
+	set_outputs();
 }
 
 void set_outputs(){
@@ -44,9 +46,9 @@ void set_outputs(){
 	rlink.command(WRITE_PORT_0, p0);
 	rlink.command(WRITE_PORT_4, p1);
 
-	led_state = ~led_state;
-	p0 = ~p0;
-	p1 = ~p1;	
+	//led_state = ~led_state;
+	//p0 = ~p0;
+	//p1 = ~p1;	
 }
 
 void setup_outputs(){

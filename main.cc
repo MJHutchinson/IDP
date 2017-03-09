@@ -106,8 +106,11 @@ int main(){
 	//  follow_line(get_line_follower_state(), true, false);
 	//  set_motors(125,125);
 	}
-
 	
+}
+
+int main2(){
+	return 0;
 }
 
 void debug(string s){
