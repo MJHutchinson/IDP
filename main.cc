@@ -76,7 +76,24 @@ int main(){
 	//setup_outputs();
 	cout << "SET HIGH" << endl;
 
+	//set_motors(100,0);
+
+	int state = get_line_follower_state();
+	while(((state & 0b111) == 0b101) | ((state & 0b111) == 0b000)){
+		state = get_line_follower_state();
+	}
+	drive_to_line(true);
+	set_motors(-50,-50);
+	delay(1500);
+	set_motors(0,0);
+	cout << "Line" << endl; 
+	
+
 	while(true){
+
+		//follow_line(get_line_follower_state(), true, false);
+
+				
 		//rlink.command(WRITE_PORT_0, 0b00000000);		
 		//rlink.command(WRITE_PORT_1, 0b00000000);		
 		//rlink.command(WRITE_PORT_2, 0b00000000);		
@@ -95,8 +112,8 @@ int main(){
 		//rlink.command(WRITE_PORT_6, 0b11111111);		
 		//rlink.command(WRITE_PORT_7, 0b11111111);
 		//delay(200);
-		electronics_test();
-		delay(100);
+		//electronics_test();
+		//delay(100);
 	//	while(!((get_line_follower_state() & 0b1111)) == 0b0000){}
 	//	while((get_line_follower_state() & 0b1111) == 0b0000){}
 	//	while((get_line_follower_state() & 0b111) == 0b111){}

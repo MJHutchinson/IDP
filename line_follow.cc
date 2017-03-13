@@ -170,7 +170,7 @@ bool drive_to_line(bool speed){
 	while(true){
 		state = get_line_follower_state();
 		
-		if((state & FRONT_LINE_BITS) == 0b111){
+		if((state & SIDE_LINE_BITS) == 0b101){
 			break;
 		}
 		
@@ -301,6 +301,8 @@ int follow_line(int state, bool speed, bool reverse){
 /////////////////////////////////
 //temp for test- need to figure//
 		case 0b111:
+		case 0b000:
+		case 0b101:
 			if(speed){
 					//cout << " Speed: fast ";
 					set_motors((FAST_SPEED - t * FAST_DIFF) * ( direction ), (FAST_SPEED + t * FAST_DIFF) * ( direction ));
@@ -310,8 +312,6 @@ int follow_line(int state, bool speed, bool reverse){
 					set_motors((SLOW_SPEED - t * SLOW_DIFF) * ( direction ), (SLOW_SPEED + t * SLOW_DIFF) * ( direction ));
 				return 1;
 			}
-		case 0b000:
-		case 0b101:
 
 		default:
 			set_motors(0,0);
