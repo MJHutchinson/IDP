@@ -6,6 +6,8 @@
 #include <iostream>
 #include <robot_delay.h>
 #include <vector>
+#include <stdlib.h> 
+
 #include "sensor_interface.h"
 #include "facing.h"
 
@@ -55,7 +57,9 @@ bool node_to_node(int start, int finish);
 bool node_to_neighbour(int start, int finish);
 bool drive_to_line(bool speed);
 bool reverse_to_line(bool speed);
+bool motor_axis_to_line();
 bool rotate(facing end);
+bool rotate_to_line(int direction);
 facing facing_from_node_to_node(int start, int finish);
 float error(int state);
 float PID(int state);

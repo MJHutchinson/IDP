@@ -19,8 +19,6 @@ int current_node = 0;
 facing current_direction = EAST;
 
 bool node_to_node(int start, int finish){
-	//Dijkstra's Algorithm Implimentaion
-	//copy of map - can be edited
 	
 	vector<int> path = get_path(start, finish);
 
@@ -29,11 +27,14 @@ bool node_to_node(int start, int finish){
 	int next = path.back();
 	path.pop_back();
 
+	cout << "Current node: " << current_node << " Current direction: " << current_direction << endl;
+
 	while(!path.empty()){
 		node_to_neighbour(current, next);
 		current = next;
 		next = path.back();
 		path.pop_back();
+		
 	}
 	
 	return true;
@@ -110,10 +111,6 @@ vector<int> get_path(int start, int finish){
 		current = prev[current];
 	}
 
-	//for(int k = 0; k < 8; k++){
-	//	cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
-	//}
-
 	return path;
 }
 
@@ -129,12 +126,6 @@ bool node_to_neighbour(int start, int finish){
 		cout << "rotating to face direction" << endl;
 		rotate(direction_to_neighbour);
 	}
-	
-	//rlink.command(BOTH_MOTORS_GO_SAME, SLOW_SPEED);
-	//int time = global_time.read();
-	//while((global_time.read() - time) < 20){
-	//	follow_line(get_line_follower_state(), false, false);
-	//}
 	
 	if(map[start].has_markers){
 		cout << "driving to start node markers" << endl;
@@ -170,7 +161,7 @@ bool drive_to_line(bool speed){
 	while(true){
 		state = get_line_follower_state();
 		
-		if((state & SIDE_LINE_BITS) == 0b101){
+		if((state & FRONT_LINE_BITS) == 0b111){
 			break;
 		}
 		
@@ -219,35 +210,92 @@ bool rotate(facing end){
 		return true;	
 	}
 
-
-	int state;
-	int start_time = global_time.read();
-	int time = start_time;
+	//int start_time = global_time.read();
+	//int time = start_time;
 	int rotation_to_do = end - current_direction;
-	//some error check needed to not crash on trucks
 	int rotation_direction = (rotation_to_do > 0) ? 1 : -1;
+
+	if(rotation_to_do > 180){
+		rotation_direction = -rotation_direction;
+		rotation_to_do = 360 - rotation_to_do;
+	}
+
+	if(rotation_to_do < -180){
+		rotation_direction = -rotation_direction;
+		rotation_to_do = 360 - rotation_to_do;
+	}
+
+	if((current_direction == EAST) & (rotation_direction == 1)){
+		rotation_direction = -1;
+		rotation_to_do = 360 - rotation_to_do;
+	}
+	if((current_direction == WEST) & (rotation_direction == -1)){
+		rotation_direction = 1;
+		rotation_to_do = 360 - rotation_to_do;
+	}
+
+	if(rotation_to_do < 0){
+		rotation_to_do = -rotation_to_do;
+	}
+
+	while(rotation_to_do > 360){
+		rotation_to_do -= 360;
+	}
+	while(rotation_to_do < 0){
+		rotation_to_do += 360;
+	}
+
 	cout << "Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
+	
+	motor_axis_to_line();
+	
+	while(rotation_to_do > 0){
+		rotate_to_line(rotation_direction);
+		rotation_to_do -= 90;
+		cout << "rotated 90, " << rotation_to_do << " left" << endl;
+	}
+
+	set_motors(0,0);
+
+	current_direction = end;	
+	
+	return true;
+}
+
+bool motor_axis_to_line(){
+	
+	int state = get_line_follower_state();
 
 	while(true){
 		state = get_line_follower_state();
-		
+	
 		if((state & BACK_LINE_BITS)){
 			set_motors(0,0);
 			break;
 		}
-		
-		//follow_line(state, false, false);
-		//increment position
-		
-		if(global_time.read() - time > TIMEOUT){
-			set_motors(0,0);
-			return false;
-		}
-	}
 	
-	set_motors( rotation_direction * SPOT_TURN_SPEED , rotation_direction * -SPOT_TURN_SPEED);
+		follow_line(state, false, false);
+		//increment position
+	
+		//if(global_time.read() - time > TIMEOUT){
+		//	set_motors(0,0);
+		//	return false;
+		//}
+	}	
+
+	cout << "back line found" << endl;
+
+	return true;
+
+}
+
+bool rotate_to_line(int direction){
+	
+	set_motors(direction * SPOT_TURN_SPEED, direction * -SPOT_TURN_SPEED);
 
 	delay(TURN_DELAY);	
+
+	int state = get_line_follower_state();
 	
 	while(true){
 		state = get_line_follower_state();
@@ -255,15 +303,8 @@ bool rotate(facing end){
 		if((state & 0b010)){
 			break;
 		}
-		
-		if(global_time.read() - time > TIMEOUT){
-			//set_motors(0,0);
-			//return false;
-		}
 	}
 
-	current_direction = end;	
-	
 	return true;
 }
 
@@ -298,8 +339,6 @@ int follow_line(int state, bool speed, bool reverse){
 		case 0b011:
 		case 0b100:
 		case 0b110:
-/////////////////////////////////
-//temp for test- need to figure//
 		case 0b111:
 		case 0b000:
 		case 0b101:
@@ -374,29 +413,4 @@ void set_motors(int left, int right){
 	}
 
 	return;
-
-//////////////////////////////////////
-///MOTOR_2 Bust on our box////////////
-//////////////////////////////////////
-	if(left == right){
-		if((left > 0) & (left < 127)){
-			rlink.command(BOTH_MOTORS_GO_OPPOSITE, left);
-		}else if((left < 0) & (left > - 127)){
-			rlink.command(BOTH_MOTORS_GO_OPPOSITE, 128 - left);
-		}else{
-			rlink.command(BOTH_MOTORS_GO_OPPOSITE, 0);	
-		}
-	}else if(left == -right){
-		if((left > 0) & (left < 127)){
-			rlink.command(BOTH_MOTORS_GO_SAME, left);
-		}else if((left < 0) & (left > -127)){
-			rlink.command(BOTH_MOTORS_GO_SAME, 128 - left);
-		}else{
-			rlink.command(BOTH_MOTORS_GO_SAME, 0);	
-		}
-	}else{
-		rlink.command(MOTOR_1_GO, left);
-		rlink.command(MOTOR_2_GO, right);
-	}
-///////////////////////////////////////
 }

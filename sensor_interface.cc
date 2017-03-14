@@ -1,6 +1,6 @@
 #include "sensor_interface.h"
 int led_state = 0b1111;
-bool pneumatic_state = 0b00;
+int pneumatic_state = 0b00;
 
 int p0 = 0b00110000;
 int p1 = 0b00001100;
@@ -23,16 +23,17 @@ int get_strain_state(){
 	return rlink.request(STRAIN_PORT);
 }
 
-//void set_LEDs(int state)(){
-//	led_state = state & 0b1111;
-//}
-
 void set_pneumatic_0(bool state){
 	pneumatic_state = (-state ^ pneumatic_state) & (1 << 0);
 	set_outputs();
 }
 void set_pneumatic_1(bool state){
 	pneumatic_state = (-state ^ pneumatic_state) & (1 << 1);
+	set_outputs();
+}
+
+void set_leds(int state){
+	led_state = state;
 	set_outputs();
 }
 
@@ -43,17 +44,49 @@ void set_outputs(){
 	int port_0 = led & LED_BITS_0;
 	int port_1 = ((led & LED_BITS_1) | (pneumatic & PNEUMATIC_BITS));
 
-	rlink.command(WRITE_PORT_0, p0);
-	rlink.command(WRITE_PORT_4, p1);
+	rlink.command(WRITE_PORT_0, port_0);
+	rlink.command(WRITE_PORT_4, port_1);
 
 	//led_state = ~led_state;
 	//p0 = ~p0;
 	//p1 = ~p1;	
 }
 
-void setup_outputs(){
+colour get_colour(){
+	int colour_state = get_colour_state();
+	material mat = get_material();
+	colour col;
 
-	rlink.command(WRITE_PORT_0, (LED_BITS_0 | PNEUMATIC_BITS));
-	rlink.command(WRITE_PORT_4, LED_BITS_1);
+	switch(colour_state){
+		case 0:	return WHITE;
+		case 1:	return RED;
+		case 2:	return GREEN;
+		case 3:	return BLACK;
+		default: return BLACK;
+	}
 
+	if((col == BLACK) & (mat = ALUMINIUM)){
+		col = GREEN;
+	}
+	if((col == GREEN) & (mat = STEEL)){
+		col = BLACK;
+	}
+
+	return col;
+
+}
+
+material get_material(){	
+	int strain_state = get_strain_state();
+	material mat;	
+
+	if(strain_state > 75){
+		mat = STEEL;	
+	}else if(strain_state > 45){
+		mat = ALUMINIUM;
+	}else{
+		mat = NONE;
+	}	
+
+	return mat;
 }

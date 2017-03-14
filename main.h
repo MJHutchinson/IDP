@@ -9,6 +9,8 @@
 #include "line_follow.h"
 #include "arm_control.h"
 #include "facing.h"
+#include "colour.h"
+#include "material.h"
 
 #define DEBUG 1
 #define ROBOT_NUM  8

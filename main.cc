@@ -40,6 +40,106 @@ void electronics_test(){
 		set_outputs();
 }
 
+void test(char command){
+
+	switch(command){
+		//Driving commands
+		case 'd':
+			rotate_to_line(1);
+		case 'a':
+			rotate_to_line(-1);
+		case 'w':
+			drive_to_line(true);
+			break;
+		case 's':
+			motor_axis_to_line();
+			break;
+		case 'q':
+			set_leds(0b1111);
+			delay(200);
+			set_leds(0b0000);
+			delay(200);
+			set_leds(0b1111);
+			delay(200);
+			set_leds(0b0000);
+			delay(200);
+			set_leds(0b1111);
+			delay(200);
+			set_leds(0b0000);
+			delay(200);
+			set_leds(0b1111);
+			delay(200);
+			set_leds(0b0000);
+			delay(200);
+			set_leds(0b1111);
+			delay(200);
+			set_leds(0b0000);
+			delay(200);
+			break;
+		case 'e':
+			break;
+
+		//Arm commands
+		case 'i':
+			set_pneumatic_0(true);
+			break;
+		case 'k':
+			set_pneumatic_0(false);
+			break;
+		case 'j':
+			set_pneumatic_1(true);
+			break;
+		case 'l':
+			set_pneumatic_1(false);
+			break;
+		case 'u':
+			break;
+		case 'o':
+			break;
+
+		//Misc test commands
+		case 't':
+			electronics_test();
+			break;
+		case 'r':
+			set_arm_motor(50);
+		case '+':
+			set_pneumatic_0(true);
+			set_pneumatic_1(true);
+			//rlink.command(WRITE_PORT_0, 0b11111111);
+			//rlink.command(WRITE_PORT_4, 0b11111111);
+			break;
+		case '-':
+			set_pneumatic_0(false);
+			set_pneumatic_1(false);
+			//rlink.command(WRITE_PORT_0, 0b00000000);
+			//rlink.command(WRITE_PORT_4, 0b00000000);			
+			break;
+		case 'h':
+			cout << "w - drive to line" << endl;
+			cout << "s - put motor axis on line" << endl;
+			cout << "d - rotate +90" << endl;
+			cout << "a - rotate -90" << endl;
+			cout << "q - flash leds 2 seconds" << endl;
+			cout << "e - " << endl;
+			
+			cout << "i - extend arm" << endl;
+			cout << "k - retract arm" << endl;
+			cout << "j - rotate arm +90" << endl;
+			cout << "l - rotate arm -90" << endl;
+			cout << "u - arm up" << endl;
+			cout << "o - arm down" << endl;
+
+			cout << "t - test electronics" << endl;
+			cout << "r - turn arm motor left" << endl;
+			cout << "+ - set pneumatics high" << endl;
+			cout << "- - set pneumatics low" << endl;
+			cout << "k - kill all ports" << endl;
+			break;
+	}
+
+}
+
 int main(){
 	
 	
@@ -74,23 +174,23 @@ int main(){
 	//cout << (((false) << 1)) << endl;
 	//cout << (((false) << 1) >> 1) << endl;
 	//setup_outputs();
-	cout << "SET HIGH" << endl;
 
-	//set_motors(100,0);
+	//set_motors(0,100);
 
-	int state = get_line_follower_state();
-	while(((state & 0b111) == 0b101) | ((state & 0b111) == 0b000)){
-		state = get_line_follower_state();
-	}
-	drive_to_line(true);
-	set_motors(-50,-50);
-	delay(1500);
-	set_motors(0,0);
-	cout << "Line" << endl; 
-	
+	 //rlink.command(MOTOR_4_GO, 100);
+	//drive_to_line(true);
+	//set_motors(0,0);
+	//delay(5000);
+	//rotate(WEST);
+
+	//node_to_node(0,4);
 
 	while(true){
+		cout << "enter command: ";
+		char command;
+		command = cin.get();
 
+		test(command);
 		//follow_line(get_line_follower_state(), true, false);
 
 				
@@ -124,10 +224,6 @@ int main(){
 	//  set_motors(125,125);
 	}
 	
-}
-
-int main2(){
-	return 0;
 }
 
 void debug(string s){

@@ -1,6 +1,9 @@
 #include <robot_instr.h>
 #include <robot_link.h>
 
+#include "colour.h"
+#include "material.h"
+
 //input ports
 #define LINE_FOLLOWER_PORT READ_PORT_0
 #define TACTILE_PORT READ_PORT_4
@@ -17,6 +20,8 @@
 #define PNEUMATIC_BITS 0b11000000
 //port 1 bits
 #define TACTILE_BITS 0b11000011
+#define LEFT_TACTILE_BIT 0b00000001
+#define RIGHT_TACTILE_BIT 0b00000010
 #define LED_BITS_1 0b00001100
 #define COLOUR_BITS 0b00110000
 
@@ -26,8 +31,9 @@ int get_line_follower_state();
 int get_tactile_state();
 int get_colour_state();
 int get_strain_state();
-//void set_LEDs(int state)();
 void set_pneumatic_0(bool state);
 void set_pneumatic_1(bool state);
+void set_leds(int state);
 void set_outputs();
-void setup_outputs();
+colour get_colour();
+material get_material();
