@@ -13,8 +13,8 @@ node map[NODES] = {
 };
 
 //Position on map tracking variables
-int current_node = 0;
-facing current_direction = EAST;
+int current_node = 5;
+facing current_direction = SOUTH;
 //Inertial position tracking variables
 point current_position_estimate = map[0].position;
 float current_direction_estimate = 90.0;
@@ -25,29 +25,33 @@ bool node_to_node(int finish){
 
 	//Check not already at node
 	if(current_node == finish){
+		cout << "Already at node" << endl;
 		return true;
 	}
 	
 	//Get the path from the current node to 
 	vector<int> path = get_path(current_node, finish);
 
-	//Grab the current and next nodes from the path
-	int current  = path.back();
-	path.pop_back();
+	//Grab the next nodes from the path
+	int current;
 	int next = path.back();
 	path.pop_back();
 
+	cout << path.empty() << endl;
+
 	//Go through the path navigating from node to node
-	while(!path.empty()){
-		//Call function to go to the next node
-		node_to_neighbour(current, next);
+	do{
 		//Housekeep vairables
 		current = next;
 		next = path.back();
 		path.pop_back();
+		//Call function to go to the next node
+		cout << "going from " << current << " to " << next << endl;
+		node_to_neighbour(current, next);
 		
-	}
+	}while(!path.empty());
 	
+	cout << "Arrived at " << finish << endl;
 	return true;
 }
 
@@ -61,22 +65,22 @@ vector<int> get_path(int start, int finish){
 	float prev[NODES];
 	bool done[NODES];
 		
-	cout << "initialsie arrays" << endl;
+	//cout << "initialsie arrays" << endl;
 	for(int i = 0; i < NODES; i++){
 		dist[i] = 9999.8;
 		prev[i] = -1;
 		done[i] = false;
 		Q[i] = map[i];
 	}
-	cout << "arrays initialised" << endl;
+	//cout << "arrays initialised" << endl;
 
 	//Set the start node
 	dist[start] = 0;
 
 	//Print out the initial state of the arrays
-	for(int k = 0; k < 8; k++){
-		cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
-	}
+	//for(int k = 0; k < 8; k++){
+	//	cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
+	//}
 
 	//Loop til all the nodes are analysed
 	while(!(done[0] & done[1] & done[2] & done[3] & done[4] & done[5] & done[6] & done[7])){
@@ -89,7 +93,7 @@ vector<int> get_path(int start, int finish){
 				distance = dist[n];
 			}
 		}
-		cout << "	selected node " << closest << endl;
+		//cout << "	selected node " << closest << endl;
 		
 		//Check a real node is found
 		if(closest == -1){
@@ -109,11 +113,11 @@ vector<int> get_path(int start, int finish){
 				int connection = Q[closest].connections[j];
 				//Work out if going from this node is a faster way to get to the connection
 				if(!done[connection]){
-					cout << "		looking at node " << closest << " to " << connection << endl;
+					//cout << "		looking at node " << closest << " to " << connection << endl;
 					float new_dist = dist[closest] + sqrt(pow(Q[closest].position.x - Q[connection].position.x, 2) + pow(Q[closest].position.y - Q[connection].position.y, 2));
-					cout << "		current dist: " << dist[connection] << " new dist: " << new_dist << endl;
+					//cout << "		current dist: " << dist[connection] << " new dist: " << new_dist << endl;
 					if(new_dist < dist[Q[closest].connections[j]]){
-						cout << "		better path found" << endl;
+						//cout << "		better path found" << endl;
 						dist[connection] = new_dist;
 						prev[connection] = closest;
 					}
@@ -122,19 +126,22 @@ vector<int> get_path(int start, int finish){
 		}
 	}
 	
+	//cout << "Going from " << start << " to " << finish << endl;
 	//Print the final state of the map
-	for(int k = 0; k < 8; k++){
-		cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
-	}
+	//for(int k = 0; k < 8; k++){
+	//	cout << k << ": connection: " << prev[k] << " distance: " << dist[k] << " done: " << done[k] << endl;
+	//}
 
 	//Populate a vector with the path to follow
+	cout << endl << "Path is ";
 	vector<int> path;
 	int current  = finish;
 	while(current != -1){
-		cout << current << endl;
+		cout << current << " ";
 		path.push_back(current);
 		current = prev[current];
 	}
+	cout << endl;
 
 	//Return the path
 	return path;
@@ -143,38 +150,44 @@ vector<int> get_path(int start, int finish){
 //Takes the robot from a node to an adjacent node
 bool node_to_neighbour(int start, int finish){
 	//Check at the expected node
+	bool rotated_short_marker_box = false;
+
 	if(start != current_node){
-		cout << "Not at the expected node. At: " << current_node << " Told to go from: " << start << endl;
+		cout << "N2Ne: Not at the expected node. At: " << current_node << " Told to go from: " << start << endl;
 		return false;
 	}
-	cout << "Going from node " << start << " to node " << finish << endl;
+	cout << "N2Ne: Going from node " << start << " to node " << finish << endl;
 	facing direction_to_neighbour = facing_from_node_to_node(start, finish);
 	//Rotate to face the correct direction if needed
 	if(direction_to_neighbour != current_direction){
-		cout << "rotating to face direction" << endl;
+		cout << "N2Ne: Rotating to face direction" << endl;
+		if((start == 6) & ((finish == EAST) | (finish == WEST))){
+			cout << "Ignoring start markers" << endl;
+			rotated_short_marker_box = true;
+		}
 		rotate(direction_to_neighbour);
 	}
 	//Drive to the markers of the node started at if present
-	if(map[start].has_markers){
-		cout << "driving to start node markers" << endl;
+	if(map[start].has_markers & !rotated_short_marker_box){
+		cout << "N2Ne: Driving to start node markers" << endl;
 		if(!drive_to_line(true))
 			return false;
 	}
+	delay(2000);
 	//Drive to the markers of the node to end at if present
 	if(map[finish].has_markers){
-		cout << "driving to end node markers" << endl;
+		cout << "N2Ne: Driving to end node markers" << endl;
 		if(!drive_to_line(true))
 			return false;
 	}
+	delay(2000);
 	//Drive to the final line
 	if(drive_to_line(true)){
-		cout << "driving to end node" << endl;
-		set_motors(0,0);
+		cout << "N2Ne: Driving to end node" << endl;
+		current_node = finish;
 		return true;
 	}
-	
-	current_node = finish;
-	
+
 	return false;	
 }
 //Drives the robot til its front line sensors are aligned with a line
@@ -184,7 +197,7 @@ bool drive_to_line(bool speed){
 	set_motors(speed ? FAST_SPEED : SLOW_SPEED, speed ? FAST_SPEED : SLOW_SPEED);
 	delay(DELAY);
 	//Follow line til junction detected
-	while(!((state & FRONT_LINE_BITS) == 0b111)){
+	while(!((state & FRONT_LINE_BITS) == 0b0111)){
 		state = get_line_follower_state();
 		
 		follow_line(state, speed, false);
@@ -223,12 +236,14 @@ bool reverse_to_line(bool speed){
 bool rotate(facing end){
 	//Check not already facing requested direction
 	if(end == current_direction){
-		cout << "Alreday facing that way";
+		cout << "ROTA: Alreday facing that way";
 		return true;	
 	}
+	cout << "ROTA: Rotating from " << current_direction << " to " << end << endl;
 	//Compute the rotation direction and magnitude
 	int rotation_to_do = end - current_direction;
 	int rotation_direction = (rotation_to_do > 0) ? 1 : -1;
+	cout << "ROTA: Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
 	//Limit rotation to +/- 180 degrees
 	if(rotation_to_do > 180){
 		rotation_direction = -rotation_direction;
@@ -239,30 +254,30 @@ bool rotate(facing end){
 		rotation_to_do = 360 - rotation_to_do;
 	}
 	//Space constraints on some nodes (e.g. trucks) makes these the correct directions to be rotating
-	if((current_direction == EAST) & (rotation_direction == 1)){
+	if((current_direction == EAST) & (rotation_direction == 1) & ((current_node == 1) | (current_node == 0))){
 		rotation_direction = -1;
 		rotation_to_do = 360 - rotation_to_do;
 	}
-	if((current_direction == WEST) & (rotation_direction == -1)){
+	if((current_direction == WEST) & (rotation_direction == -1) & ((current_node == 1) | (current_node == 0))){
 		rotation_direction = 1;
 		rotation_to_do = 360 - rotation_to_do;
 	}
 	//Limit rotation scope
+	while(rotation_to_do < 0){
+		rotation_to_do = -rotation_to_do;
+	}
 	while(rotation_to_do > 360){
 		rotation_to_do -= 360;
 	}
-	while(rotation_to_do < 0){
-		rotation_to_do += 360;
-	}
 
-	cout << "Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
+	cout << "ROTA: Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
 	//Put bakc axis on line for rotation
 	motor_axis_to_line();
 	//Rotate in steps of 90 degrees to make the full turn
 	while(rotation_to_do > 0){
 		rotate_to_line(rotation_direction);
 		rotation_to_do -= 90;
-		cout << "rotated 90, " << rotation_to_do << " left" << endl;
+		cout << "ROTA: Rotated 90, " << rotation_to_do << " left" << endl;
 	}
 
 	set_motors(0,0);
@@ -416,7 +431,7 @@ void set_motors(int left, int right){
 
 	if((right > 0) & (right < 127)){
 		rlink.command(MOTOR_3_GO, right);
-	}else if((left < 0) & (right > -127)){
+	}else if((right < 0) & (right > -127)){
 		rlink.command(MOTOR_3_GO, 128 - right);
 	}else{
 		rlink.command(MOTOR_3_GO, 0);	

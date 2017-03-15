@@ -46,7 +46,8 @@ int main(){
 		cout << "enter command: ";
 		char command;
 		command = cin.get();
-
+		char null;
+		null = cin.get();
 		test(command);
 	}
 	
@@ -109,7 +110,7 @@ void mission(){
 					return;
 				case BLACK:
 				case UNKNOWN:
-					abort();
+					abort_robot();
 					return;
 			}
 		}else{
@@ -174,13 +175,13 @@ bool deliver_block(){
 			set_led_holding(false);
 			return true;
 		case UNKNOWN:
-			abort();
+			abort_robot();
 			return false;
 	}
 	return false;
 }
 
-void abort(){
+void abort_robot(){
 	while(true){
 		set_leds(0b0000);
 		delay(200);
@@ -195,8 +196,10 @@ void test(char command){
 		//Driving commands
 		case 'd':
 			rotate_to_line(1);
+			break;
 		case 'a':
 			rotate_to_line(-1);
+			break;
 		case 'w':
 			drive_to_line(true);
 			break;
@@ -224,47 +227,97 @@ void test(char command){
 			delay(200);
 			set_leds(0b0000);
 			delay(200);
+			set_leds(0b1111);
 			break;
 		case 'e':
 			break;
 
 		//Arm commands
 		case 'i':
-			set_pneumatic_0(true);
+			set_extended(true);
 			break;
 		case 'k':
-			set_pneumatic_0(false);
+			set_extended(false);
 			break;
 		case 'j':
-			set_pneumatic_1(true);
+			set_arm_facing(LEFT);
 			break;
 		case 'l':
-			set_pneumatic_1(false);
+			set_arm_facing(RIGHT);
 			break;
 		case 'u':
+			set_up(true);
 			break;
 		case 'o':
+			set_up(false);
+			break;
+
+		//Basicer move controls
+		//Arm commands
+		case 't':
+			set_motors(100,100);
+			break;
+		case 'g':
+			set_motors(-50,-50);
+			break;
+		case 'f':
+			set_motors(-50,50);
+			break;
+		case 'h':
+			set_motors(50,-50);
+			break;
+		case 'r':
+			break;
+		case 'y':
 			break;
 
 		//Misc test commands
-		case 't':
+		case 'z':
+			set_motors(0,0);
+			set_arm_motor(0);
+			break;
+		case 'x':
 			electronics_test();
 			break;
-		case 'r':
-			set_arm_motor(50);
+		case 'c':
+			break;
+		case 'v':
+			break;
+		case 'b':
+			break;
 		case '+':
-			set_pneumatic_0(true);
-			set_pneumatic_1(true);
-			//rlink.command(WRITE_PORT_0, 0b11111111);
-			//rlink.command(WRITE_PORT_4, 0b11111111);
 			break;
 		case '-':
-			set_pneumatic_0(false);
-			set_pneumatic_1(false);
-			//rlink.command(WRITE_PORT_0, 0b00000000);
-			//rlink.command(WRITE_PORT_4, 0b00000000);			
 			break;
-		case 'h':
+
+		//Navigate to nodes
+		case '0':
+			node_to_node(0);
+			break;
+		case '1':
+			node_to_node(1);
+			break;
+		case '2':
+			node_to_node(2);
+			break;
+		case '3':
+			node_to_node(3);
+			break;
+		case '4':
+			node_to_node(4);
+			break;
+		case '5':
+			node_to_node(5);
+			break;
+		case '6':
+			node_to_node(6);
+			break;
+		case '7':
+			node_to_node(7);
+			break;
+
+		case 'm':
+			cout << "//DRIVE CONTROLS:" << endl;
 			cout << "w - drive to line" << endl;
 			cout << "s - put motor axis on line" << endl;
 			cout << "d - rotate +90" << endl;
@@ -272,6 +325,7 @@ void test(char command){
 			cout << "q - flash leds 2 seconds" << endl;
 			cout << "e - " << endl;
 			
+			cout << "ARM CONTROLS" << endl;
 			cout << "i - extend arm" << endl;
 			cout << "k - retract arm" << endl;
 			cout << "j - rotate arm +90" << endl;
@@ -279,11 +333,22 @@ void test(char command){
 			cout << "u - arm up" << endl;
 			cout << "o - arm down" << endl;
 
-			cout << "t - test electronics" << endl;
-			cout << "r - turn arm motor left" << endl;
-			cout << "+ - set pneumatics high" << endl;
-			cout << "- - set pneumatics low" << endl;
-			cout << "k - kill all ports" << endl;
+			cout << "BASE CONTROLS" << endl;
+			cout << "t - go forward" << endl;
+			cout << "g - go reverse" << endl;
+			cout << "f - rotate left" << endl;
+			cout << "h - rotate right" << endl;
+			cout << "r - " << endl;
+			cout << "y - " << endl;
+
+			cout << "z - kill motors" << endl;
+			cout << "x - test electronics" << endl;
+			cout << "c - " << endl;
+			cout << "v - " << endl;
+			cout << "b - " << endl;
+			cout << "+ - " << endl;
+			cout << "- - " << endl;
+			cout << "k - " << endl;
 			break;
 	}
 

@@ -27,7 +27,7 @@ void blink_empty();
 bool empty_truck();
 bool empty_conveyor();
 bool deliver_block();
-void abort();
+void abort_robot();
 
 void init();
 void test(char c);

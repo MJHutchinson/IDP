@@ -71,10 +71,10 @@ bool put_down_block(arm_facing direction){
 //Sets the direction the arm is facing
 bool set_arm_facing(arm_facing end){
 	//Check if arm is already facing the right way
-	if(end == state.direction){
-		cout << "arm facing that way already" << endl;
-		return true;
-	}
+	//if(end == state.direction){
+	//	cout << "arm facing that way already" << endl;
+	//	return true;
+	//}
 
 	//Turn to left limit
 	if(end == LEFT){
