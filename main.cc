@@ -6,38 +6,187 @@ robot_link rlink;
 stopwatch global_time;
 
 extern node map[];
+extern int current_node;
+extern facing current_facing;
 
+int palletes_to_deliver = 6;
 int palletes_delivered = 0;
-int palletes_on_coveyor = 0;
+int palletes_on_conveyor = 0;
+bool truck_1_empty = false;
+bool truck_2_empty = false;
+int last_truck_1_pickup = -1;
+int last_truck_2_pickup = -1;
 
-void electronics_test(){
+int main(){
+	//Start the initialisation process
+	debug("INNIT: Starting global stopwatch");
+	
+	global_time.start();
 
-		cout << "ELECTRONICS TEST: ";
-
-		//int colour_state = get_colour_state();
-
-		//cout << "Colour state: " << colour_state;
-
-		int strain_state = get_strain_state();
-		string material = "";		
-
-		if(strain_state > 75){
-			material = "Stel";		
-		}else if(strain_state > 45){
-			material  = "Alum";
-		}else{
-			material = "None";
+	#ifdef __arm__
+		if (!rlink.initialise ()) {               // setup for local hardware
+			return -1;
 		}
+	#else
+		if (!rlink.initialise (ROBOT_NUM)) {      // setup the link
+			cout << "Cannot initialise link" << endl;
+			rlink.print_errs("    ");
+			return -1;
+		}
+	#endif
+	
+	init();
+	
+	rlink.command(RAMP_TIME, 50);
 
-		cout << " Strain state: " << material;
+	if(DEBUG)
+		cout << "INNIT: Complete in " << global_time.read() << "ms" << endl;
 
-		int tactile_state = get_tactile_state();
+	while(true){
+		cout << "enter command: ";
+		char command;
+		command = cin.get();
 
-		cout << " Tactial state: " << tactile_state;
+		test(command);
+	}
+	
+}
 
-		cout << endl;
+void init(){
 
-		set_outputs();
+	rlink.command(RAMP_TIME, 50);
+
+}
+
+void mission(){
+	if((palletes_delivered + palletes_on_conveyor) < palletes_to_deliver){
+		if(current_node == TRUCK_1_NODE){
+			if(truck_1_empty){
+				blink_empty();
+				return;
+			}else{
+				if(empty_truck()){
+					truck_1_empty = true;
+					deliver_block();
+					return;
+				}else{
+					return;
+				}
+			}
+			
+		}else{
+			if(!truck_1_empty){
+				node_to_node(TRUCK_1_NODE);
+				if(empty_truck()){
+					truck_1_empty = true;
+					deliver_block();
+					return;
+				}
+			}else if(!truck_2_empty){
+				node_to_node(TRUCK_2_NODE);
+				if(empty_truck()){
+					truck_2_empty = true;
+					deliver_block();
+					return;
+				}
+			}
+		}		
+	}else if(palletes_delivered < 6){
+		node_to_node(STACK_NODE);
+		if(empty_conveyor()){
+			colour col = get_colour();
+			switch(col){
+				case WHITE:
+				case GREEN:
+					put_down_block(RIGHT);
+					palletes_delivered += 1;
+					palletes_on_conveyor -= 1;
+					return;
+				case RED:
+					put_down_block(LEFT);
+					palletes_delivered += 1;
+					palletes_on_conveyor -= 1;
+					return;
+				case BLACK:
+				case UNKNOWN:
+					abort();
+					return;
+			}
+		}else{
+			return;
+		}
+	}else{
+		node_to_node(0);
+		cout << "DONE!!" << endl;
+	}
+}
+
+void blink_empty(){
+	set_led_empty(true);
+	delay(4000);
+	set_led_empty(false);
+	delay(4000);
+	set_led_empty(true);
+	delay(4000);
+	set_led_empty(false);
+	truck_1_empty = false;
+	truck_2_empty = false;
+}
+
+bool empty_truck(){
+	pick_up_block(RIGHT);
+	material mat = get_material();
+	if(mat != NONE){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool empty_conveyor(){
+	pick_up_block(FRONT);
+	material mat = get_material();
+	if(mat != NONE){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+bool deliver_block(){
+	colour col = get_colour();
+	set_led_colour(col);
+	set_led_holding(true);
+	switch(col){
+		case GREEN:
+		case WHITE:
+		case RED:
+			node_to_node(TRUCK_1_NODE);
+			put_down_block(FRONT);
+			palletes_on_conveyor += 1;
+			set_led_holding(false);
+			return true;
+		case BLACK:
+			node_to_node(BIN_NODE);
+			//Maybe need to make a new finction to prevent clashing
+			put_down_block(FRONT);
+			palletes_delivered += 1;
+			set_led_holding(false);
+			return true;
+		case UNKNOWN:
+			abort();
+			return false;
+	}
+	return false;
+}
+
+void abort(){
+	while(true){
+		set_leds(0b0000);
+		delay(200);
+		set_leds(0b1111);
+		delay(200);
+	}
 }
 
 void test(char command){
@@ -140,90 +289,34 @@ void test(char command){
 
 }
 
-int main(){
-	
-	
-	debug("INNIT: Starting global stopwatch");
-	
-	global_time.start();
+void electronics_test(){
 
-	#ifdef __arm__
-		if (!rlink.initialise ()) {               // setup for local hardware
-			return -1;
+		cout << "ELECTRONICS TEST: ";
+
+		//int colour_state = get_colour_state();
+
+		//cout << "Colour state: " << colour_state;
+
+		int strain_state = get_strain_state();
+		string material = "";		
+
+		if(strain_state > 75){
+			material = "Stel";		
+		}else if(strain_state > 45){
+			material  = "Alum";
+		}else{
+			material = "None";
 		}
-	#else
-		if (!rlink.initialise (ROBOT_NUM)) {      // setup the link
-			cout << "Cannot initialise link" << endl;
-			rlink.print_errs("    ");
-			return -1;
-		}
-	#endif
 
-	rlink.command(RAMP_TIME, 50);
+		cout << " Strain state: " << material;
 
-	if(DEBUG)
-		cout << "INNIT: Complete in " << global_time.read() << "ms" << endl;
-	
-	//rlink.command(MOTOR_1_GO, 200);
-	//rlink.command(MOTOR_2_GO, 200);
-	//rlink.command(MOTOR_3_GO, 200);
-	//rlink.command(MOTOR_4_GO, 200);
+		int tactile_state = get_tactile_state();
 
-	//cout << (((true) << 1)) << endl;
-	//cout << (((true) << 1) >> 1) << endl;
-	//cout << (((false) << 1)) << endl;
-	//cout << (((false) << 1) >> 1) << endl;
-	//setup_outputs();
+		cout << " Tactial state: " << tactile_state;
 
-	//set_motors(0,100);
+		cout << endl;
 
-	 //rlink.command(MOTOR_4_GO, 100);
-	//drive_to_line(true);
-	//set_motors(0,0);
-	//delay(5000);
-	//rotate(WEST);
-
-	//node_to_node(0,4);
-
-	while(true){
-		cout << "enter command: ";
-		char command;
-		command = cin.get();
-
-		test(command);
-		//follow_line(get_line_follower_state(), true, false);
-
-				
-		//rlink.command(WRITE_PORT_0, 0b00000000);		
-		//rlink.command(WRITE_PORT_1, 0b00000000);		
-		//rlink.command(WRITE_PORT_2, 0b00000000);		
-		//rlink.command(WRITE_PORT_3, 0b00000000);		
-		//rlink.command(WRITE_PORT_4, 0b00000000);		
-		//rlink.command(WRITE_PORT_5, 0b00000000);
-		//rlink.command(WRITE_PORT_6, 0b00000000);		
-		//rlink.command(WRITE_PORT_7, 0b00000000);
-		//delay(200);
-		//rlink.command(WRITE_PORT_0, 0b11111111);		
-		//rlink.command(WRITE_PORT_1, 0b11111111);		
-		//rlink.command(WRITE_PORT_2, 0b11111111);		
-		//rlink.command(WRITE_PORT_3, 0b11111111);		
-		//rlink.command(WRITE_PORT_4, 0b11111111);		
-		//rlink.command(WRITE_PORT_5, 0b11111111);
-		//rlink.command(WRITE_PORT_6, 0b11111111);		
-		//rlink.command(WRITE_PORT_7, 0b11111111);
-		//delay(200);
-		//electronics_test();
-		//delay(100);
-	//	while(!((get_line_follower_state() & 0b1111)) == 0b0000){}
-	//	while((get_line_follower_state() & 0b1111) == 0b0000){}
-	//	while((get_line_follower_state() & 0b111) == 0b111){}
-	//	drive_to_line(true);
-	//	node_to_node(0,3);
-	//	set_motors(0,0);
-	//  follow_line(get_line_follower_state(), true, false);
-	//  set_motors(125,125);
-	}
-	
+		set_outputs();
 }
 
 void debug(string s){

@@ -32,6 +32,21 @@ void set_pneumatic_1(bool state){
 	set_outputs();
 }
 
+void set_led_colour(int state){
+	led_state = ((led_state & 0b1100) | state);
+	set_outputs();
+}
+
+void set_led_holding(bool state){
+	led_state = ((led_state & 0b1100) | (state << 2));
+	set_outputs();
+}
+
+void set_led_empty(bool state){
+	led_state = ((led_state & 0b1100) | (state << 2));
+	set_outputs();
+}
+
 void set_leds(int state){
 	led_state = state;
 	set_outputs();
