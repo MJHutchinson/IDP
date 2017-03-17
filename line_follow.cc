@@ -13,8 +13,8 @@ node map[NODES] = {
 };
 
 //Position on map tracking variables
-int current_node = 5;
-facing current_direction = SOUTH;
+int current_node = 0;
+facing current_direction = EAST;
 //Inertial position tracking variables
 point current_position_estimate = map[0].position;
 float current_direction_estimate = 90.0;
@@ -47,7 +47,15 @@ bool node_to_node(int finish){
 		path.pop_back();
 		//Call function to go to the next node
 		cout << "going from " << current << " to " << next << endl;
+		if(current == 7){
+			set_motors(-SLOW_SPEED, -SLOW_SPEED);
+			delay(REVERSE_DELAY);
+			set_motors(0,0);
+			rotate_to_line(-1);
+			current_direction = WEST;
+		}	
 		node_to_neighbour(current, next);
+		
 		
 	}while(!path.empty());
 	
@@ -150,7 +158,7 @@ vector<int> get_path(int start, int finish){
 //Takes the robot from a node to an adjacent node
 bool node_to_neighbour(int start, int finish){
 	//Check at the expected node
-	bool rotated_short_marker_box = false;
+	bool rotated = false;
 
 	if(start != current_node){
 		cout << "N2Ne: Not at the expected node. At: " << current_node << " Told to go from: " << start << endl;
@@ -161,34 +169,33 @@ bool node_to_neighbour(int start, int finish){
 	//Rotate to face the correct direction if needed
 	if(direction_to_neighbour != current_direction){
 		cout << "N2Ne: Rotating to face direction" << endl;
-		if((start == 6) & ((finish == EAST) | (finish == WEST))){
-			cout << "Ignoring start markers" << endl;
-			rotated_short_marker_box = true;
-		}
 		rotate(direction_to_neighbour);
+		rotated = true;
 	}
 	//Drive to the markers of the node started at if present
-	if(map[start].has_markers & !rotated_short_marker_box){
-		cout << "N2Ne: Driving to start node markers" << endl;
-		if(!drive_to_line(true))
-			return false;
+	if(map[start].has_markers){
+		if(!(rotated & (current_node == 0) & (current_direction == NORTH))){
+			cout << "N2Ne: Driving to start node markers" << endl;
+			if(!drive_to_line(true))
+				return false;
+			delay(300);
+		}
+		cout << "N2Ne: Ignoring start node markers" << endl;		
 	}
-	delay(2000);
 	//Drive to the markers of the node to end at if present
 	if(map[finish].has_markers){
 		cout << "N2Ne: Driving to end node markers" << endl;
 		if(!drive_to_line(true))
 			return false;
+		delay(300);
 	}
-	delay(2000);
 	//Drive to the final line
-	if(drive_to_line(true)){
-		cout << "N2Ne: Driving to end node" << endl;
-		current_node = finish;
-		return true;
-	}
-
-	return false;	
+	cout << "N2Ne: Driving to end node" << endl;
+	if(!drive_to_line(true))
+		return false;
+	current_node = finish;
+	delay(100);
+	return true;
 }
 //Drives the robot til its front line sensors are aligned with a line
 bool drive_to_line(bool speed){
@@ -244,30 +251,32 @@ bool rotate(facing end){
 	int rotation_to_do = end - current_direction;
 	int rotation_direction = (rotation_to_do > 0) ? 1 : -1;
 	cout << "ROTA: Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;
-	//Limit rotation to +/- 180 degrees
-	if(rotation_to_do > 180){
-		rotation_direction = -rotation_direction;
-		rotation_to_do = 360 - rotation_to_do;
-	}
-	if(rotation_to_do < -180){
-		rotation_direction = -rotation_direction;
-		rotation_to_do = 360 - rotation_to_do;
-	}
-	//Space constraints on some nodes (e.g. trucks) makes these the correct directions to be rotating
-	if((current_direction == EAST) & (rotation_direction == 1) & ((current_node == 1) | (current_node == 0))){
-		rotation_direction = -1;
-		rotation_to_do = 360 - rotation_to_do;
-	}
-	if((current_direction == WEST) & (rotation_direction == -1) & ((current_node == 1) | (current_node == 0))){
-		rotation_direction = 1;
-		rotation_to_do = 360 - rotation_to_do;
-	}
 	//Limit rotation scope
-	while(rotation_to_do < 0){
+	if(rotation_to_do < 0){
 		rotation_to_do = -rotation_to_do;
+		cout << "ROTA: Normalising rotation to do" << endl;
 	}
 	while(rotation_to_do > 360){
 		rotation_to_do -= 360;
+		cout << "ROTA: Bringing rotation withon 0->360" << endl;
+	}
+
+	if(rotation_to_do > 180){
+		rotation_direction = -rotation_direction;
+		rotation_to_do = 360 - rotation_to_do;
+		cout << "ROTA: Reducing rotation" << endl;
+	}
+
+	//Space constraints on some nodes (e.g. trucks) makes these the correct directions to be rotating
+	if((current_direction == EAST) & (rotation_direction == 1) & ((current_node == 1) | (current_node == 2))){
+		rotation_direction = -1;
+		rotation_to_do = 360 - rotation_to_do;
+				cout << "ROTA: Can't turn right here";
+	}
+	if((current_direction == WEST) & (rotation_direction == -1) & ((current_node == 1) | (current_node == 2))){
+		rotation_direction = 1;
+		rotation_to_do = 360 - rotation_to_do;
+				cout << "ROTA: Can't turn left here";
 	}
 
 	cout << "ROTA: Rotation to do " << rotation_to_do << " Rotation direction " << rotation_direction << endl;

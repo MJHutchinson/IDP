@@ -1,8 +1,11 @@
 #include <robot_instr.h>
 #include <robot_link.h>
+#include <iostream>
 
 #include "colour.h"
 #include "material.h"
+
+using namespace std;
 
 //input ports
 #define LINE_FOLLOWER_PORT READ_PORT_0
@@ -20,7 +23,7 @@
 #define PNEUMATIC_BITS 0b11000000
 //port 1 bits
 #define TACTILE_BITS 0b11000011
-#define LEFT_TACTILE_BIT 0b00000001
+#define LEFT_TACTILE_BIT 0b10000000
 #define RIGHT_TACTILE_BIT 0b00000010
 #define LED_BITS_1 0b00001100
 #define COLOUR_BITS 0b00110000

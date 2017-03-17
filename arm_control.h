@@ -9,7 +9,7 @@
 #include "material.h"
 
 #define ARM_MOTOR MOTOR_4_GO
-#define ARM_TURN_SPEED 100
+#define ARM_TURN_SPEED 126
 #define TURN_TIME 3000
 #define ARM_TIMEOUT 5000
 

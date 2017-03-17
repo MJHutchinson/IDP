@@ -22,6 +22,7 @@
 ///Timing delays for getting off marks on driving and turning
 #define DELAY 500
 #define TURN_DELAY 1500
+#define REVERSE_DELAY 5000
 #define TIMEOUT 15000
 ///PID control values
 #define Kp 1.0

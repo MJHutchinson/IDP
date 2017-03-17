@@ -12,6 +12,7 @@
 #include "colour.h"
 #include "material.h"
 
+#define TESTING 1
 #define DEBUG 1
 #define ROBOT_NUM 8
 

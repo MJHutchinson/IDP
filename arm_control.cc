@@ -83,9 +83,10 @@ bool set_arm_facing(arm_facing end){
 		//Get the tactile button state
 		int tactile_state = get_tactile_state();
 		//Wait til the correct tactile button is hit
-		while(!(tactile_state & LEFT_TACTILE_BIT)){
-			tactile_state = get_tactile_state();
-		}
+		//while(!(tactile_state & LEFT_TACTILE_BIT)){
+		//	tactile_state = get_tactile_state();
+		//}
+		delay(5000);
 		//Stop the motor
 		set_arm_motor(0);
 		state.direction = LEFT;
@@ -99,9 +100,11 @@ bool set_arm_facing(arm_facing end){
 		//Get the tactile state
 		int tactile_state = get_tactile_state();
 		//Wait til correct tactial button is hit
-		while(!(tactile_state & RIGHT_TACTILE_BIT)){
-			tactile_state = get_tactile_state();
-		}
+		//while(!(tactile_state & RIGHT_TACTILE_BIT)){
+		//	tactile_state = get_tactile_state();
+		//	cout << tactile_state << " : " << (!(tactile_state & RIGHT_TACTILE_BIT)) << endl;
+		//}
+		delay(5000);
 		//Stop motor
 		set_arm_motor(0);
 		state.direction = RIGHT;

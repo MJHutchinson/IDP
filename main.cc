@@ -7,7 +7,7 @@ stopwatch global_time;
 
 extern node map[];
 extern int current_node;
-extern facing current_facing;
+extern facing current_direction;
 
 int palletes_to_deliver = 6;
 int palletes_delivered = 0;
@@ -42,14 +42,74 @@ int main(){
 	if(DEBUG)
 		cout << "INNIT: Complete in " << global_time.read() << "ms" << endl;
 
+	cout << "\nSet node and facing.\nEnter node (return for default)" << endl;
+	char n = cin.get();
+	cin.ignore(10000, '\n');
+	switch(n){
+		case '0':
+			current_node = 0;
+			break;
+		case '1':
+			current_node = 1;
+			break;
+		case '2':
+			current_node = 2;
+			break;
+		case '3':
+			current_node = 3;
+			break;
+		case '4':
+			current_node = 4;
+			break;
+		case '5':
+			current_node = 5;
+			break;
+		case '6':
+			current_node = 6;
+			break;
+		case '7':
+			current_node = 7;
+			break;
+	}
+	
+	cout << "Enter facing (return for default)" << endl;
+
+	n = cin.get();
+	cin.ignore(10000, '\n');
+	switch(n){
+		case 'n':
+			current_direction = NORTH;
+			break;
+		case 'e':
+			current_direction = EAST;
+			break;
+		case 's':
+			current_direction = SOUTH;
+			break;
+		case 'w':
+			current_direction = WEST;
+			break;
+	}
+	
+	cout << "Currently at node " << current_node << " facing " << current_direction << endl;
+
+if(TESTING){
 	while(true){
 		cout << "enter command: ";
 		char command;
+
 		command = cin.get();
-		char null;
-		null = cin.get();
+
+		cin.clear();		
+		cin.ignore(10000, '\n');
+
 		test(command);
 	}
+}else{
+	while(true){
+		mission();
+	}
+}
 	
 }
 
@@ -122,6 +182,7 @@ void mission(){
 	}
 }
 
+//Request new palletes
 void blink_empty(){
 	set_led_empty(true);
 	delay(4000);
@@ -134,6 +195,7 @@ void blink_empty(){
 	truck_2_empty = false;
 }
 
+//Pick up a pallete from a truck on robots right
 bool empty_truck(){
 	pick_up_block(RIGHT);
 	material mat = get_material();
@@ -144,17 +206,21 @@ bool empty_truck(){
 	}
 }
 
+//Pick up a pallete fron conveyor infront of robot
 bool empty_conveyor(){
 	pick_up_block(FRONT);
 	material mat = get_material();
 	if(mat != NONE){
+		palletes_on_conveyor -= 1;
 		return true;
 	}else{
 		return false;
 	}
 }
 
+//Deliver a block to the correct location if block is on forks
 bool deliver_block(){
+	//Get block type and set the LED's
 	colour col = get_colour();
 	set_led_colour(col);
 	set_led_holding(true);
@@ -162,14 +228,16 @@ bool deliver_block(){
 		case GREEN:
 		case WHITE:
 		case RED:
+			//If red/green/white put on conveyor
 			node_to_node(TRUCK_1_NODE);
 			put_down_block(FRONT);
 			palletes_on_conveyor += 1;
 			set_led_holding(false);
 			return true;
 		case BLACK:
+			//if black, place in bin
 			node_to_node(BIN_NODE);
-			//Maybe need to make a new finction to prevent clashing
+			//Maybe need to make a new function to prevent clashing
 			put_down_block(FRONT);
 			palletes_delivered += 1;
 			set_led_holding(false);
@@ -181,15 +249,31 @@ bool deliver_block(){
 	return false;
 }
 
+//Sit and flash until help is recived
 void abort_robot(){
+	set_motors(0,0);
+	set_arm_motor(0);
 	while(true){
-		set_leds(0b0000);
+		set_leds(0b1000);
 		delay(200);
-		set_leds(0b1111);
+		set_leds(0b0111);
+		delay(200);
+		set_leds(0b0100);
+		delay(200);
+		set_leds(0b1011);
+		delay(200);
+		set_leds(0b0010);
+		delay(200);
+		set_leds(0b1101);
+		delay(200);
+		set_leds(0b0001);
+		delay(200);
+		set_leds(0b1110);
 		delay(200);
 	}
 }
 
+//Manual control of the robot and its functions
 void test(char command){
 
 	switch(command){
@@ -209,19 +293,19 @@ void test(char command){
 		case 'q':
 			set_leds(0b1111);
 			delay(200);
-			set_leds(0b0000);
+			set_leds(0b0111);
 			delay(200);
 			set_leds(0b1111);
 			delay(200);
-			set_leds(0b0000);
+			set_leds(0b1011);
 			delay(200);
 			set_leds(0b1111);
 			delay(200);
-			set_leds(0b0000);
+			set_leds(0b1101);
 			delay(200);
 			set_leds(0b1111);
 			delay(200);
-			set_leds(0b0000);
+			set_leds(0b1110);
 			delay(200);
 			set_leds(0b1111);
 			delay(200);
@@ -267,8 +351,10 @@ void test(char command){
 			set_motors(50,-50);
 			break;
 		case 'r':
+			set_arm_motor(50);
 			break;
 		case 'y':
+			set_arm_motor(-50);
 			break;
 
 		//Misc test commands
@@ -280,6 +366,7 @@ void test(char command){
 			electronics_test();
 			break;
 		case 'c':
+			abort_robot();
 			break;
 		case 'v':
 			break;
@@ -343,7 +430,7 @@ void test(char command){
 
 			cout << "z - kill motors" << endl;
 			cout << "x - test electronics" << endl;
-			cout << "c - " << endl;
+			cout << "c - abort" << endl;
 			cout << "v - " << endl;
 			cout << "b - " << endl;
 			cout << "+ - " << endl;
@@ -354,6 +441,7 @@ void test(char command){
 
 }
 
+//Test the electronics, and output state of the sensors
 void electronics_test(){
 
 		cout << "ELECTRONICS TEST: ";
@@ -378,6 +466,10 @@ void electronics_test(){
 		int tactile_state = get_tactile_state();
 
 		cout << " Tactial state: " << tactile_state;
+
+		int colour = get_colour();
+		
+		cout << " Colour: " << colour;
 
 		cout << endl;
 
